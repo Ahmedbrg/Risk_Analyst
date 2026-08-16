@@ -1,0 +1,69 @@
+{
+  "name": "AI Risk Analysis Report Dispatcher",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "risk-analysis-report",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "email_subject",
+              "value": "=[AI Risk Analyst] High Urgency Risk Audit Report (ID: {{$json[\"body\"][\"analysis_id\"]}})"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Email Body",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "reports@airiskanalyst.io",
+        "toEmail": "={{$node[\"Webhook Trigger\"].json[\"body\"][\"recipient_email\"]}}",
+        "subject": "={{$node[\"Format Email Body\"].json[\"email_subject\"]}}",
+        "text": "=Your AI Risk Analysis is complete.\n\nOverall Risk Level: {{$node[\"Webhook Trigger\"].json[\"body\"][\"overall_risk\"]}}\nExecutive Summary:\n{{$node[\"Webhook Trigger\"].json[\"body\"][\"executive_summary\"]}}\n\nPlease find full report attached."
+      },
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Email Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Body": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

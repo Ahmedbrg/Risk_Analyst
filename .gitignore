@@ -1,0 +1,31 @@
+# Python virtual environment & cache
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# JavaScript dependencies and builds
+node_modules/
+frontend/build/
+.pnpm-store/
+
+# Environment files
+.env
+!.env.example
+
+# IDE / System
+.vscode/
+.idea/
+.DS_Store
+
+# Uploaded storage & local artifacts
+data/
+uploads/
+reports/
+logs/

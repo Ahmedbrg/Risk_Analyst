@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Risk Analyst — Decision Support Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-surface: #111827;
+      --bg-card: #1a2234;
+      --border-subtle: #243046;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --risk-critical: #ef4444;
+      --risk-high: #f97316;
+      --risk-medium: #eab308;
+      --risk-low: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app-layout {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 320px;
+      background-color: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #2563eb, #06b6d4);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+    .brand-text h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .brand-text p {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .btn-new {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: white;
+      border: 1px solid #3b82f6;
+      padding: 11px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+    .btn-new:hover {
+      background: #1e40af;
+      transform: translateY(-1px);
+    }
+
+    .doc-upload-box {
+      background-color: var(--bg-card);
+      border: 1px dashed #38bdf8;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .doc-upload-box:hover {
+      background-color: rgba(56, 189, 248, 0.08);
+    }
+    .doc-upload-box span {
+      font-size: 0.8rem;
+      color: #7dd3fc;
+      font-weight: 600;
+    }
+    .doc-upload-box p {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .sidebar-section {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .section-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .session-card {
+      padding: 12px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      font-size: 0.84rem;
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 14px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    /* MAIN CONTENT */
+    .main-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-dark);
+      position: relative;
+    }
+
+    .top-header {
+      height: 64px;
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+    }
+    .top-header h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-pill {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background-color: #064e3b;
+      color: #34d399;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-pill::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #34d399;
+    }
+
+    /* DASHBOARD PILLS */
+    .dashboard-metrics {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .metric-pill {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* CHAT STREAM */
+    .chat-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .chat-container {
+      max-width: 980px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      margin: 30px auto;
+      max-width: 760px;
+    }
+    .empty-icon {
+      font-size: 2.8rem;
+      margin-bottom: 12px;
+    }
+    .empty-state h3 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .empty-state p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .preset-chips {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      text-align: left;
+    }
+    .preset-chip {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .preset-chip:hover {
+      border-color: #38bdf8;
+      background-color: var(--bg-card);
+      transform: translateY(-2px);
+    }
+    .chip-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #38bdf8;
+      margin-bottom: 4px;
+    }
+    .chip-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* MESSAGE BUBBLES */
+    .user-row {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .user-msg {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: white;
+      padding: 14px 18px;
+      border-radius: 16px 16px 2px 16px;
+      max-width: 80%;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+    .assistant-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    /* RISK HEADER */
+    .risk-header-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .severity-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-CRITICAL { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+    .badge-HIGH { background-color: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid #f97316; }
+    .badge-MEDIUM { background-color: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid #eab308; }
+    .badge-LOW { background-color: rgba(16, 185, 129, 0.2); color: #4ade80; border: 1px solid #10b981; }
+
+    .btn-pdf {
+      background-color: #1e3a8a;
+      color: #93c5fd;
+      border: 1px solid #3b82f6;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-pdf:hover {
+      background-color: #2563eb;
+      color: #fff;
+    }
+
+    .conflict-banner {
+      background-color: rgba(239, 68, 68, 0.15);
+      border-left: 4px solid #ef4444;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      color: #fca5a5;
+      line-height: 1.5;
+    }
+
+    .summary-box {
+      background-color: var(--bg-card);
+      border-left: 4px solid #38bdf8;
+      border-radius: 6px;
+      padding: 14px 18px;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+
+    /* GRID OF RISKS */
+    .risk-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 16px;
+    }
+    .risk-item-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .risk-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .risk-card-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #fff;
+    }
+
+    .data-pill {
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: #cbd5e1;
+    }
+    .data-pill strong {
+      color: var(--text-muted);
+    }
+    .evidence-pill {
+      background-color: rgba(56, 189, 248, 0.1);
+      border-left: 3px solid #38bdf8;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      color: #7dd3fc;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ACTIONABLE RECOMMENDATIONS TABLE */
+    .actions-table-box {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .actions-table-box h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #38bdf8;
+      margin-bottom: 12px;
+    }
+    .action-row {
+      display: grid;
+      grid-template-columns: 3fr 1.2fr 1fr;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.85rem;
+      align-items: center;
+    }
+    .action-row:last-child {
+      border-bottom: none;
+    }
+
+    /* INPUT BAR */
+    .bottom-input-bar {
+      padding: 18px 28px;
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .input-form-wrapper {
+      max-width: 980px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+    .main-input {
+      flex: 1;
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: white;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border 0.2s ease;
+    }
+    .main-input:focus {
+      border-color: #38bdf8;
+    }
+    .send-submit-btn {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: white;
+      border: none;
+      padding: 0 28px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .send-submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .form-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .agent-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .loading-pulse {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #38bdf8;
+      font-size: 0.9rem;
+      padding: 16px;
+      background-color: var(--bg-surface);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #38bdf8;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+    const API_BASE = "/api/v1";
+
+    const PRESET_SCENARIOS = [
+      {
+        title: "📉 Financial Decline & Late Suppliers",
+        desc: "Revenue down 35%, 2 late suppliers, expiring contract, low cash reserves.",
+        prompt: "Our revenue decreased 35% during the last six months. Two major suppliers are frequently late, one important contract expires next month, and we currently have limited cash reserves. Analyze the risks."
+      },
+      {
+        title: "🔐 Cybersecurity Ransomware Incident",
+        desc: "Endpoints infected with ransomware, personal customer data exposed.",
+        prompt: "Yesterday 15 production servers were infected with ransomware and customer personal data was potentially exposed. We have not yet notified GDPR authorities."
+      },
+      {
+        title: "👥 Lead Architect Resignation",
+        desc: "Principal software architect resigned with 2 weeks notice before delivery.",
+        prompt: "Our lead software architect and two senior backend engineers resigned with a 2-week notice period right before our Q4 enterprise delivery deadline."
+      },
+      {
+        title: "⚠️ Conflicting Statements Test",
+        desc: "Contradictory financial figures to test automatic conflict detection.",
+        prompt: "Our CFO confirmed we have 12 months of cash reserves remaining. However our internal audit yesterday revealed we only have 3 months of cash reserves left."
+      }
+    ];
+
+    function App() {
+      const [messages, setMessages] = useState([]);
+      const [input, setInput] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [conversationId, setConversationId] = useState(null);
+      const [useCrewAI, setUseCrewAI] = useState(false);
+      const [includeRAG, setIncludeRAG] = useState(false);
+      const [uploadedDocs, setUploadedDocs] = useState([]);
+      const fileInputRef = useRef(null);
+      const chatEndRef = useRef(null);
+
+      const scrollToBottom = () => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      };
+
+      useEffect(() => {
+        scrollToBottom();
+      }, [messages, loading]);
+
+      const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          const res = await fetch(`${API_BASE}/documents/upload`, {
+            method: "POST",
+            body: formData,
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setUploadedDocs((prev) => [...prev, file.name]);
+            setIncludeRAG(true);
+            alert(`✅ Document "${file.name}" indexed successfully (${data.chunks_created} chunks). RAG mode enabled!`);
+          } else {
+            alert(`Upload failed: ${data.detail || 'Unknown error'}`);
+          }
+        } catch (err) {
+          alert(`Document upload error: ${err.message}`);
+        }
+      };
+
+      const handleSendPrompt = async (textToSend) => {
+        const query = textToSend || input;
+        if (!query.trim() || loading) return;
+
+        setInput('');
+        setLoading(true);
+
+        const userMsg = { role: 'user', content: query, timestamp: new Date().toISOString() };
+        setMessages((prev) => [...prev, userMsg]);
+
+        try {
+          const response = await fetch(`${API_BASE}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              message: query,
+              use_crew_ai: useCrewAI,
+              include_rag: includeRAG,
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Server returned HTTP ${response.status}`);
+          }
+
+          const data = await response.json();
+          if (data.risk_analysis && data.risk_analysis.conversation_id) {
+            setConversationId(data.risk_analysis.conversation_id);
+          }
+          setMessages((prev) => [...prev, data]);
+        } catch (err) {
+          console.error(err);
+          setMessages((prev) => [...prev, {
+            role: 'assistant',
+            content: `⚠️ Failed to get response from server: ${err.message}. Please verify the backend is running.`
+          }]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleDownloadPDF = async (analysis) => {
+        try {
+          const response = await fetch(`${API_BASE}/reports/pdf`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(analysis)
+          });
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Risk_Assessment_Report_${analysis.analysis_id.slice(0, 8)}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        } catch (err) {
+          alert('Failed to generate PDF report.');
+        }
+      };
+
+      return (
+        <div className="app-layout">
+          {/* SIDEBAR */}
+          <div className="sidebar">
+            <div className="brand">
+              <div className="brand-icon">🛡️</div>
+              <div className="brand-text">
+                <h1>AI Risk Analyst</h1>
+                <p>Enterprise Decision Support</p>
+              </div>
+            </div>
+
+            <button className="btn-new" onClick={() => { setMessages([]); setConversationId(null); }}>
+              <span>+</span> New Risk Audit
+            </button>
+
+            {/* DOCUMENT INGESTION */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileUpload}
+              accept=".pdf,.docx,.txt,.csv"
+            />
+            <div className="doc-upload-box" onClick={() => fileInputRef.current.click()}>
+              <span>📄 Upload Document (PDF/DOCX/CSV)</span>
+              <p>Extract facts & enable RAG</p>
+            </div>
+
+            {uploadedDocs.length > 0 && (
+              <div style={{ fontSize: "0.78rem", color: "#38bdf8" }}>
+                <strong>Attached:</strong> {uploadedDocs.join(", ")}
+              </div>
+            )}
+
+            <div className="sidebar-section">
+              <div className="section-label">Active Audit Session</div>
+              {conversationId ? (
+                <div className="session-card">
+                  <strong>Session:</strong> #{conversationId.slice(0, 8)}<br />
+                  <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>Sliding-window context memory active</span>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>No active session yet. Describe a scenario to begin.</div>
+              )}
+            </div>
+
+            <div className="sidebar-footer">
+              <div><strong>Core Engine:</strong> Grounded 5-Factor Scoring</div>
+              <div><strong>Anti-Hallucination:</strong> Verified Citations</div>
+              <div><strong>Taxonomy:</strong> 10 Standard ISO Domains</div>
+            </div>
+          </div>
+
+          {/* MAIN PANEL */}
+          <div className="main-panel">
+            <div className="top-header">
+              <h2>Decision-Support Risk Intelligence Platform</h2>
+              <div className="header-badges">
+                <span className="status-pill">Scoring Engine Active</span>
+              </div>
+            </div>
+
+            <div className="chat-scroll">
+              <div className="chat-container">
+                {messages.length === 0 && (
+                  <div className="empty-state">
+                    <div className="empty-icon">🛡️</div>
+                    <h3>Grounded Business Risk Evaluation</h3>
+                    <p>
+                      Describe any business crisis, financial drop, vendor delay, contract deadline, or cybersecurity incident in natural language.
+                    </p>
+
+                    <div className="preset-chips">
+                      {PRESET_SCENARIOS.map((item, idx) => (
+                        <div key={idx} className="preset-chip" onClick={() => handleSendPrompt(item.prompt)}>
+                          <div className="chip-title">{item.title}</div>
+                          <div className="chip-desc">{item.desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {messages.map((msg, idx) => (
+                  <div key={idx}>
+                    {msg.role === 'user' ? (
+                      <div className="user-row">
+                        <div className="user-msg">{msg.content}</div>
+                      </div>
+                    ) : (
+                      <div className="assistant-card">
+                        {msg.risk_analysis ? (
+                          <div>
+                            {/* OVERALL HEADER BANNER */}
+                            <div className="risk-header-banner">
+                              <div>
+                                <span className={`severity-badge badge-${msg.risk_analysis.overall_risk}`}>
+                                  OVERALL SEVERITY: {msg.risk_analysis.overall_risk}
+                                </span>
+                                <span style={{ marginLeft: "10px", fontSize: "0.85rem", color: "#94a3b8" }}>
+                                  Composite Score: <strong>{msg.risk_analysis.overall_score.toFixed(1)}/5.0</strong>
+                                </span>
+                              </div>
+
+                              <button className="btn-pdf" onClick={() => handleDownloadPDF(msg.risk_analysis)}>
+                                📄 Export Boardroom PDF Report
+                              </button>
+                            </div>
+
+                            {/* CONFLICTS WARNING IF DETECTED */}
+                            {msg.risk_analysis.conflicts_detected && msg.risk_analysis.conflicts_detected.length > 0 && (
+                              <div className="conflict-banner" style={{ marginTop: "14px" }}>
+                                <strong>⚠️ Factual Contradictions Flagged:</strong>
+                                <ul style={{ paddingLeft: "18px", marginTop: "4px" }}>
+                                  {msg.risk_analysis.conflicts_detected.map((conf, cIdx) => (
+                                    <li key={cIdx}>{conf}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* EXECUTIVE SUMMARY */}
+                            <div style={{ marginTop: '16px' }}>
+                              <div className="summary-box">
+                                <strong>Executive Summary:</strong><br />
+                                {msg.risk_analysis.executive_summary}
+                              </div>
+                            </div>
+
+                            {/* IDENTIFIED RISKS GRID */}
+                            <h4 style={{ marginTop: '20px', marginBottom: '12px', color: '#38bdf8', fontSize: '0.92rem' }}>
+                              Identified Risk Vectors ({msg.risk_analysis.identified_risks.length})
+                            </h4>
+
+                            <div className="risk-grid">
+                              {msg.risk_analysis.identified_risks.map((risk, rIdx) => (
+                                <div key={rIdx} className="risk-item-card">
+                                  <div className="risk-card-top">
+                                    <span className="risk-card-title">{risk.title}</span>
+                                    <span className={`severity-badge badge-${risk.severity}`} style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                                      {risk.severity} ({risk.numerical_score.toFixed(1)})
+                                    </span>
+                                  </div>
+
+                                  <p style={{ fontSize: '0.85rem', color: '#cbd5e1', lineHeight: '1.45' }}>
+                                    {risk.description}
+                                  </p>
+
+                                  <div className="data-pill">
+                                    <strong>Category:</strong> {risk.category}<br/>
+                                    <strong>Root Cause:</strong> {risk.root_cause}<br/>
+                                    <strong>Potential Impact:</strong> {risk.potential_impact}
+                                  </div>
+
+                                  {risk.sources && risk.sources.length > 0 && (
+                                    <div className="evidence-pill">
+                                      <strong>Source Citation:</strong> {risk.sources[0].exact_quote}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* ACTIONABLE MITIGATION TABLE */}
+                            {msg.risk_analysis.priority_actions && msg.risk_analysis.priority_actions.length > 0 && (
+                              <div className="actions-table-box" style={{ marginTop: '20px' }}>
+                                <h4>Actionable Mitigation & Governance Plan</h4>
+                                {msg.risk_analysis.priority_actions.map((act, aIdx) => (
+                                  <div key={aIdx} className="action-row">
+                                    <div>
+                                      <strong>[{act.priority}]</strong> {act.action}
+                                      <div style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Target: {act.expected_outcome}</div>
+                                    </div>
+                                    <div style={{ color: '#38bdf8', fontWeight: 600 }}>Owner: {act.owner}</div>
+                                    <div style={{ color: '#facc15' }}>{act.deadline}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* ANTI-HALLUCINATION MISSING INFORMATION MATRIX */}
+                            {msg.risk_analysis.missing_breakdown && (
+                              <div style={{ marginTop: '18px', fontSize: '0.84rem', color: '#facc15', backgroundColor: 'var(--bg-card)', padding: '14px', borderRadius: '8px' }}>
+                                <strong>🔍 Missing Information & Uncertainty Breakdown:</strong>
+                                <div style={{ marginTop: '6px', color: '#cbd5e1' }}>
+                                  <strong>Needed to assess with 100% certainty:</strong>
+                                  <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
+                                    {msg.risk_analysis.missing_breakdown.needed_to_assess_accurately.map((info, iIdx) => (
+                                      <li key={iIdx}>{info}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{msg.content}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {loading && (
+                  <div className="loading-pulse">
+                    <div className="spinner"></div>
+                    <span>Quantifying risk vectors, applying deterministic scoring matrix, and extracting traceable evidence...</span>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+            </div>
+
+            {/* BOTTOM INPUT FORM */}
+            <div className="bottom-input-bar">
+              <form className="input-form-wrapper" onSubmit={(e) => { e.preventDefault(); handleSendPrompt(); }}>
+                <div className="form-row">
+                  <input
+                    type="text"
+                    className="main-input"
+                    placeholder="Describe a business crisis, contract status, or attach a document..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                  />
+                  <button type="submit" className="send-submit-btn" disabled={loading}>
+                    Analyze Risks
+                  </button>
+                </div>
+                <div className="form-options">
+                  <label className="agent-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={useCrewAI}
+                      onChange={(e) => setUseCrewAI(e.target.checked)}
+                    />
+                    <span>Multi-Agent CrewAI Analysis (5 Collaborating AI Agents)</span>
+                  </label>
+                  <label className="agent-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={includeRAG}
+                      onChange={(e) => setIncludeRAG(e.target.checked)}
+                    />
+                    <span>Enable RAG Document Retrieval</span>
+                  </label>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
